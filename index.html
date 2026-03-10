@@ -61,7 +61,7 @@ h3{font-size:clamp(1.05rem,3.5vw,1.3rem);font-weight:700}
 .flash-i{width:100%;min-height:220px;border-radius:24px;background:#fff;box-shadow:0 8px 32px rgba(26,46,74,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;cursor:pointer;transition:transform .15s;text-align:center;max-width:400px;margin:0 auto}
 .flash-i:active{transform:scale(.98)}
 .banner{padding:12px 16px;border-radius:14px;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.bi{background:#e8f4fd;color:#1a5fa8}.bw2{background:#fff3d6;color:#8a6800}.bok{background:#e0faf0;color:#06a77d}
+.bi{background:#e8f4fd;color:#1a5fa8}
 .rlink{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fc;border-radius:12px;text-decoration:none;color:var(--text);font-weight:500;transition:background .15s;margin-bottom:8px;font-size:.88rem}
 .rlink:hover{background:#eef2f8}
 .bcard{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(26,46,74,.06);border-left:5px solid var(--blue);animation:fadeUp .3s;cursor:pointer;transition:all .15s}
@@ -95,8 +95,343 @@ h3{font-size:clamp(1.05rem,3.5vw,1.3rem);font-weight:700}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
 const{useState,useEffect,useRef,useCallback}=React;
+const ls={g:(k,d=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},s:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},r:(k,d="")=>{try{return localStorage.getItem(k)||d}catch{return d}},w:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
+const SK="wordAdv_v1",SK_C="wordAdv_country",SK_F="wordAdv_family",SK_PP="wordAdv_ppin";
+const AVATARS=["📚","🦉","🌟","🎨","🦊","🐱","🐶","🌈","🚀","🎵","🌻","🦋","🐢","🎭","🏰","🌙","📖","✨","🎪","🌸"];
+const NA="23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+const genCode=()=>"WA-"+Array.from({length:4},()=>NA[Math.floor(Math.random()*NA.length)]).join("");
+const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
+const GRADES=[
+{id:"PS",l:{IE:"Nursery",UK:"Nursery",US:"Nursery"},age:"2–3",e:"🍼",b:"early"},
+{id:"PK",l:{IE:"Pre-Sch",UK:"Pre-Sch",US:"Pre-K"},age:"3–4",e:"🧸",b:"early"},
+{id:"K",l:{IE:"Junior Inf",UK:"Reception",US:"Kindergarten"},age:"5–6",e:"🌟",b:"foundation"},
+{id:"1",l:{IE:"1st Class",UK:"Year 2",US:"Grade 1"},age:"6–7",e:"📚",b:"foundation"},
+{id:"2",l:{IE:"2nd Class",UK:"Year 3",US:"Grade 2"},age:"7–8",e:"✏️",b:"foundation"},
+{id:"3",l:{IE:"3rd Class",UK:"Year 4",US:"Grade 3"},age:"8–9",e:"🔤",b:"elementary"},
+{id:"4",l:{IE:"4th Class",UK:"Year 5",US:"Grade 4"},age:"9–10",e:"📖",b:"elementary"},
+{id:"5",l:{IE:"5th Class",UK:"Year 6",US:"Grade 5"},age:"10–11",e:"🦉",b:"elementary"},
+{id:"6",l:{IE:"6th Class",UK:"Year 7",US:"Grade 6"},age:"11–12",e:"🖊️",b:"middle"},
+{id:"7",l:{IE:"1st Year",UK:"Year 8",US:"Grade 7"},age:"12–13",e:"📜",b:"middle"},
+{id:"8",l:{IE:"2nd Year",UK:"Year 9",US:"Grade 8"},age:"13–14",e:"🏛️",b:"middle"},
+{id:"9",l:{IE:"3rd Year",UK:"Year 10",US:"Grade 9"},age:"14–15",e:"🎭",b:"high"},
+{id:"10",l:{IE:"TY/4th Yr",UK:"Year 11",US:"Grade 10"},age:"15–16",e:"🌍",b:"high"},
+{id:"11",l:{IE:"5th Year",UK:"Year 12",US:"Grade 11"},age:"16–17",e:"🎓",b:"high"},
+{id:"12",l:{IE:"6th Year",UK:"Year 13",US:"Grade 12"},age:"17–18",e:"📰",b:"high"},
+{id:"AD",l:{IE:"Adult",UK:"Adult",US:"Adult"},age:"18+",e:"🌿",b:"high"}
+];
+const gG=id=>GRADES.find(g=>g.id===id)||GRADES[0];
+const gL=(id,c)=>{const g=gG(id);return g.l[c]||g.l.US};
+const gB=id=>gG(id).b;
+const TOPICS={
+early:[{k:"early_letters",l:"Letters & Sounds",e:"🔤"},{k:"early_rhyme",l:"Rhyming Words",e:"🎵"},{k:"early_sight",l:"Sight Words",e:"👁️"},{k:"early_colours",l:"Colour Words",e:"🌈"},{k:"early_story",l:"Story Order",e:"📖"}],
+foundation:[{k:"phonics_blends",l:"Consonant Blends",e:"🔊"},{k:"sight_words_k2",l:"Sight Words",e:"👁️"},{k:"short_vowels",l:"Short Vowels",e:"🔤"},{k:"long_vowels",l:"Long Vowels",e:"🔡"},{k:"rhyme_families",l:"Word Families",e:"🏘️"},{k:"simple_sentences",l:"Sentences",e:"📝"},{k:"punctuation",l:"Punctuation",e:"❓"}],
+elementary:[{k:"prefixes_suffixes",l:"Prefixes & Suffixes",e:"🔧"},{k:"compound_words",l:"Compound Words",e:"🔗"},{k:"context_clues",l:"Context Clues",e:"🔍"},{k:"parts_of_speech",l:"Parts of Speech",e:"🏷️"},{k:"paragraph",l:"Paragraphs",e:"📄"},{k:"main_idea",l:"Main Idea",e:"💡"},{k:"story_elements",l:"Story Elements",e:"🎭"},{k:"poetry_basics",l:"Poetry Basics",e:"🌸"},{k:"figurative",l:"Figurative Language",e:"🎨"},{k:"spelling",l:"Spelling",e:"✅"}],
+middle:[{k:"literary_devices",l:"Literary Devices",e:"🎭"},{k:"plot_structure",l:"Plot & Narrative",e:"📈"},{k:"character",l:"Characters",e:"👤"},{k:"theme",l:"Theme & Moral",e:"💬"},{k:"pov",l:"Point of View",e:"👁️"},{k:"compare",l:"Compare & Contrast",e:"⚖️"},{k:"inference",l:"Inferences",e:"🧠"},{k:"text_evidence",l:"Text Evidence",e:"📜"},{k:"grammar_adv",l:"Advanced Grammar",e:"📐"},{k:"vocab_context",l:"Vocabulary",e:"📚"},{k:"essay",l:"Essay Structure",e:"✍️"}],
+high:[{k:"rhetoric",l:"Rhetorical Analysis",e:"🗣️"},{k:"lit_crit",l:"Literary Criticism",e:"🔬"},{k:"argument",l:"Argument Writing",e:"⚖️"},{k:"classical",l:"Classical Lit",e:"🏛️"},{k:"poetry_adv",l:"Poetry Analysis",e:"🌙"},{k:"research",l:"Research",e:"🔎"},{k:"syntax",l:"Syntax & Style",e:"✒️"},{k:"world_lit",l:"World Lit",e:"🌍"},{k:"shakespeare",l:"Shakespeare",e:"🎭"},{k:"american_lit",l:"American Lit",e:"🦅"},{k:"british_lit",l:"British Lit",e:"🏰"}]
+};
+const topicsFor=gid=>TOPICS[gB(gid)]||[];
+const masLvl=tp=>{if(!tp||tp.at<5)return"new";const p=tp.co/tp.at;return p>=.8?"mastered":p>=.5?"learning":"growing"};
+const wCls=c=>({red:"wr",blue:"wb",purple:"wp",yellow:"wy",grey:"wg",teal:"wt"})[c]||"wr";
+const WCOLS=[{id:"red",l:"Coral",b:"#FF6B6B"},{id:"blue",l:"Blue",b:"#5B9BD5"},{id:"purple",l:"Purple",b:"#9B7FCF"},{id:"yellow",l:"Sunny",b:"#E6B422"},{id:"grey",l:"Grey",b:"#999"},{id:"teal",l:"Teal",b:"#20B2AA"}];
+const CORR=["Wonderful! ✨","You've got it! 🌟","Brilliant! 📚","Keep shining! 💫","Outstanding! 🎉","Way to go! 🌈","Nailed it! ⭐","Fantastic! 🏆"];
+const rC=()=>CORR[Math.floor(Math.random()*CORR.length)];
+const Q={
+early_letters:[{q:"What letter makes 'sss'? 🐍",o:["S","B","M","T"],a:"S",h:"Snake!"},{q:"What letter makes 'mmm'? 😋",o:["M","N","P","D"],a:"M",h:"Yummy!"},{q:"What letter makes 'buh'? 🏀",o:["D","B","P","G"],a:"B",h:"Bounce!"},{q:"What letter says 'aaa'? 👨‍⚕️",o:["A","E","O","U"],a:"A",h:"Open wide!"},{q:"What letter makes 'fff'? 🐟",o:["F","V","P","H"],a:"F",h:"Fish!"},{q:"What letter says 'tuh'? 🌮",o:["T","D","K","P"],a:"T",h:"Taco!"},{q:"What letter makes 'duh'? 🐕",o:["B","G","D","T"],a:"D",h:"Dog!"},{q:"What letter says 'kuh'? 🐱",o:["C","K","G","S"],a:"C",h:"Cat!"},{q:"What letter makes 'puh'? 🍕",o:["P","B","D","T"],a:"P",h:"Pizza!"},{q:"What letter says 'rr'? 🦁",o:["R","L","W","N"],a:"R",h:"Roar!"}],
+early_rhyme:[{q:"Which rhymes with CAT? 🐱",o:["bat 🦇","dog 🐶"],a:"bat 🦇",h:"Same ending!"},{q:"Which rhymes with BIG?",o:["pig 🐷","run 🏃"],a:"pig 🐷",h:"Listen!"},{q:"Which rhymes with MOON? 🌙",o:["spoon 🥄","tree 🌳"],a:"spoon 🥄",h:"-oon!"},{q:"Which rhymes with BEE? 🐝",o:["tree 🌳","cup ☕"],a:"tree 🌳",h:"'ee'!"},{q:"Which rhymes with HAT? 🎩",o:["mat 🧹","sun ☀️"],a:"mat 🧹",h:"Same ending!"},{q:"Which rhymes with KING? 👑",o:["ring 💍","ball ⚽"],a:"ring 💍",h:"-ing!"},{q:"Which rhymes with DAD? 👨",o:["sad 😢","cup ☕"],a:"sad 😢",h:"Same ending!"},{q:"Which rhymes with STAR? ⭐",o:["car 🚗","dog 🐶"],a:"car 🚗",h:"-ar!"},{q:"Which rhymes with FOX? 🦊",o:["box 📦","hat 🎩"],a:"box 📦",h:"-ox!"},{q:"Which rhymes with SUN? ☀️",o:["fun 🎉","cat 🐱"],a:"fun 🎉",h:"-un!"}],
+early_sight:[{q:"What word? → THE",o:["the","he"],a:"the",h:"Three letters!"},{q:"What word? → IS",o:["is","in"],a:"is",h:"Last letter!"},{q:"What word? → AND",o:["and","an"],a:"and",h:"Three letters!"},{q:"What word? → CAN",o:["can","cat"],a:"can",h:"Yes you ___!"},{q:"What word? → SEE",o:["see","she"],a:"see",h:"I can ___ you!"},{q:"What word? → MY",o:["my","me"],a:"my",h:"___ book!"},{q:"What word? → GO",o:["go","no"],a:"go",h:"Ready set ___!"},{q:"What word? → WE",o:["we","me"],a:"we",h:"You and I!"},{q:"What word? → IT",o:["it","at"],a:"it",h:"Look at ___!"},{q:"What word? → UP",o:["up","us"],a:"up",h:"Stand ___!"}],
+early_colours:[{q:"What colour is 🍎?",o:["Red","Blue"],a:"Red",h:"Fire truck!"},{q:"What colour is 🌊?",o:["Blue","Green"],a:"Blue",h:"Like sky!"},{q:"What colour is ☀️?",o:["Yellow","Purple"],a:"Yellow",h:"Bright!"},{q:"What colour is 🌿?",o:["Green","Red"],a:"Green",h:"Like grass!"},{q:"What colour is 🍊?",o:["Orange","Pink"],a:"Orange",h:"The fruit!"},{q:"What colour is 🌸?",o:["Pink","Grey"],a:"Pink",h:"Pretty!"},{q:"What colour is 🍇?",o:["Purple","Brown"],a:"Purple",h:"Grapes!"},{q:"What colour is ☁️?",o:["White","Black"],a:"White",h:"Fluffy!"},{q:"What colour is 🍌?",o:["Yellow","Red"],a:"Yellow",h:"Banana!"},{q:"What colour is 🐸?",o:["Green","Blue"],a:"Green",h:"Ribbit!"}],
+early_story:[{q:"🥚→🐣→❓ Next?",o:["🐔","🌙"],a:"🐔",h:"Grows up!"},{q:"🌱→🌿→❓ Next?",o:["🌳","🌙"],a:"🌳",h:"Grows!"},{q:"😴→☀️→❓ Then?",o:["🍳 Breakfast","🌙 Bed"],a:"🍳 Breakfast",h:"Morning!"},{q:"🧹→🧽→❓ Doing?",o:["Cleaning 🧼","Cooking 🍳"],a:"Cleaning 🧼",h:"Tidy!"},{q:"🥣→👕→❓ After?",o:["🎒 School","😴 Sleep"],a:"🎒 School",h:"Ready!"},{q:"🌧️→☀️→❓ Then?",o:["🌈 Rainbow","❄️ Snow"],a:"🌈 Rainbow",h:"Colourful!"},{q:"1️⃣→2️⃣→❓ Next?",o:["3️⃣","5️⃣"],a:"3️⃣",h:"Count!"},{q:"📖→📖→📖→❓",o:["😴 Sleep","🏃 Run"],a:"😴 Sleep",h:"Bedtime!"}],
+phonics_blends:[{q:"Blend in BLUE?",o:["bl","pl","br","fl"],a:"bl",h:"B+L!"},{q:"Blend in FROG? 🐸",o:["fr","fl","gr","br"],a:"fr",h:"F+R!"},{q:"Starts with 'SH'?",o:["ship","sip","hip","tip"],a:"ship",h:"Quiet!"},{q:"Blend in TREE? 🌳",o:["tr","th","dr","cr"],a:"tr",h:"T+R!"},{q:"Starts with 'CH'?",o:["chair","share","care","hair"],a:"chair",h:"Choo-choo!"},{q:"Blend in PLAY?",o:["pl","bl","cl","fl"],a:"pl",h:"P+L!"},{q:"Starts with 'ST'?",o:["stop","shop","top","hot"],a:"stop",h:"S+T!"},{q:"Blend in GROW? 🌱",o:["gr","gl","cr","dr"],a:"gr",h:"G+R!"}],
+sight_words_k2:[{q:"Tap: THE",o:["the","they","then","there"],a:"the",h:"3 letters!"},{q:"Tap: SAID",o:["sail","said","sand","same"],a:"said",h:"Past of say!"},{q:"Tap: HAVE",o:["have","gave","wave","cave"],a:"have",h:"I ___ a dog!"},{q:"Tap: COME",o:["some","come","home","dome"],a:"come",h:"___ here!"},{q:"Tap: WERE",o:["were","where","here","there"],a:"were",h:"They ___ happy!"},{q:"Tap: DOES",o:["does","goes","toes","hose"],a:"does",h:"She ___ it!"},{q:"Tap: THEIR",o:["there","their","they","them"],a:"their",h:"Belongs to them!"},{q:"Tap: WOULD",o:["could","should","would","wood"],a:"would",h:"I ___ like some!"}],
+short_vowels:[{q:"Vowel in CAT?",o:["Short A","Short E","Short I","Short O"],a:"Short A",h:"Apple!"},{q:"Vowel in PEN?",o:["Short E","Short A","Short I","Short U"],a:"Short E",h:"Egg!"},{q:"Vowel in SIT?",o:["Short I","Short E","Short A","Short U"],a:"Short I",h:"Igloo!"},{q:"Vowel in HOT?",o:["Short O","Short A","Short U","Short E"],a:"Short O",h:"Octopus!"},{q:"Vowel in CUP?",o:["Short U","Short O","Short I","Short A"],a:"Short U",h:"Umbrella!"},{q:"Short A word?",o:["hat","hate","heat","hit"],a:"hat",h:"Ah!"},{q:"Short E word?",o:["bed","bead","bad","bid"],a:"bed",h:"Eh!"},{q:"Short I word?",o:["fin","fine","fun","fan"],a:"fin",h:"Ih!"}],
+long_vowels:[{q:"Long A word?",o:["cake","cat","cut","cot"],a:"cake",h:"Says its name!"},{q:"Long E word?",o:["tree","trip","trap","trot"],a:"tree",h:"Eee!"},{q:"Long I word?",o:["kite","kit","kat","key"],a:"kite",h:"Says its name!"},{q:"Long O word?",o:["bone","bon","ban","bin"],a:"bone",h:"Oh!"},{q:"Long U word?",o:["cute","cut","cat","cot"],a:"cute",h:"Says its name!"},{q:"Makes vowel long in MAKE?",o:["Silent E","Double letters","Letter K","Nothing"],a:"Silent E",h:"Magic E!"},{q:"Short→long pair?",o:["hop→hope","hat→hit","sun→sin","map→mop"],a:"hop→hope",h:"Add E!"},{q:"RAIN has long ___.",o:["A","I","E","O"],a:"A",h:"AI=long A!"}],
+rhyme_families:[{q:"'-at' family?",o:["mat","men","mop","mud"],a:"mat",h:"Cat,bat,hat..."},{q:"'-ig' family?",o:["wig","wag","wet","win"],a:"wig",h:"Big,dig,pig..."},{q:"'-un' family?",o:["bun","bin","ban","ben"],a:"bun",h:"Fun,run,sun..."},{q:"'-op' family?",o:["hop","hip","hap","hep"],a:"hop",h:"Mop,top,pop..."},{q:"'-ug' family?",o:["mug","mag","mig","meg"],a:"mug",h:"Bug,hug,rug..."},{q:"'-ake' family?",o:["lake","lick","lock","luck"],a:"lake",h:"Cake,make..."},{q:"'-ine' family?",o:["mine","man","moon","moan"],a:"mine",h:"Fine,line..."},{q:"'-ell' family?",o:["bell","ball","bill","bull"],a:"bell",h:"Well,tell..."}],
+simple_sentences:[{q:"Complete sentence?",o:["The cat sat.","Cat sat the.","Sat cat.","The sat."],a:"The cat sat.",h:"Subject+verb!"},{q:"Telling sentence ends with?",o:["Period (.)","Question (?)","Exclamation (!)","Comma (,)"],a:"Period (.)",h:"A dot!"},{q:"Correct order?",o:["I like dogs.","Dogs like I.","Like I dogs.","I dogs like."],a:"I like dogs.",h:"Who→does what"},{q:"Correct capitals?",o:["The bird sings.","the bird sings.","the Bird sings.","The bird Sings."],a:"The bird sings.",h:"Capital start!"},{q:"Which is a question?",o:["Is it raining?","It is raining.","Raining is it.","It raining is."],a:"Is it raining?",h:"Ends with ?"},{q:"Missing: 'she ran fast'",o:["Capital S","Question mark","Word 'the'","Nothing"],a:"Capital S",h:"Start!"},{q:"Words in 'I see a cat.'?",o:["4","3","5","2"],a:"4",h:"Count!"},{q:"About a dog?",o:["The dog barked.","The cat purred.","The bird flew.","The fish swam."],a:"The dog barked.",h:"Find dog!"}],
+punctuation:[{q:"Ends a question?",o:["?","!",".",","],a:"?",h:"Curvy!"},{q:"Shows excitement?",o:["!","?",".",":"],a:"!",h:"Wow!"},{q:"End of 'I like cake'?",o:[".","?","!",":"],a:".",h:"Calm!"},{q:"Correct commas?",o:["I like cats, dogs, and fish.","I, like cats.","I like, cats.","I like cats dogs."],a:"I like cats, dogs, and fish.",h:"Lists!"},{q:"Starts a list?",o:[": (colon)","?","!","- (dash)"],a:": (colon)",h:"Two dots!"},{q:"Correct?",o:["Don't","Do'nt","Dont'","Don t"],a:"Don't",h:"Apostrophe!"},{q:"Period goes?",o:["After last word","Before last","After space","Next line"],a:"After last word",h:"The end!"},{q:"Shows talking?",o:["Quotation marks","Period","Comma","Colon"],a:"Quotation marks",h:"Speech!"}],
+prefixes_suffixes:[{q:"'Un-' means:",o:["Not","Very","Again","Before"],a:"Not",h:"Not happy!"},{q:"'-ful' means:",o:["Full of","Without","Like","Before"],a:"Full of",h:"Full of help!"},{q:"'Re-' means:",o:["Again","Not","Before","After"],a:"Again",h:"Again!"},{q:"'-less' means:",o:["Without","Full of","More","Before"],a:"Without",h:"Without!"},{q:"'Pre-' means:",o:["Before","After","Not","Again"],a:"Before",h:"Before!"},{q:"'-er' means:",o:["One who","Full of","Without","Not"],a:"One who",h:"Teacher!"},{q:"'Dis-' means:",o:["Opposite","Again","Before","Very"],a:"Opposite",h:"Opposite!"},{q:"'-ment' makes:",o:["A noun","A verb","Adjective","Adverb"],a:"A noun",h:"Noun!"}],
+compound_words:[{q:"Which is compound?",o:["sunflower","beautiful","running","happily"],a:"sunflower",h:"Sun+flower!"},{q:"'butterfly' =",o:["butter+fly","but+terfly","butt+erfly","b+utterfly"],a:"butter+fly",h:"Flying!"},{q:"NOT compound?",o:["basket","basketball","bedroom","raincoat"],a:"basket",h:"Can't split!"},{q:"Rain+bow =",o:["rainbow","rainbox","bowrain","rainbowl"],a:"rainbow",h:"Colourful!"},{q:"Room for sleeping?",o:["bedroom","bathroom","classroom","mushroom"],a:"bedroom",h:"Bed+room!"},{q:"Book+shelf =",o:["bookshelf","bookcase","bookbag","bookend"],a:"bookshelf",h:"Books!"},{q:"Compound with foot?",o:["football","footage","footer","footle"],a:"football",h:"Foot+ball!"},{q:"Cup+cake =",o:["cupcake","capcuke","cakecup","cupacake"],a:"cupcake",h:"🧁"}],
+context_clues:[{q:"'FAMISHED, ate 3 bowls' =",o:["Hungry","Tired","Happy","Cold"],a:"Hungry",h:"3 bowls!"},{q:"'ELATED when won' =",o:["Happy","Sad","Scared","Angry"],a:"Happy",h:"Won!"},{q:"'FRIGID wind, shivered' =",o:["Cold","Hot","Fast","Soft"],a:"Cold",h:"Shiver!"},{q:"'RELUCTANT, cold pool' =",o:["Unwilling","Excited","Happy","Fast"],a:"Unwilling",h:"Cold!"},{q:"'ENORMOUS elephant' =",o:["Very large","Small","Fast","Old"],a:"Very large",h:"Towered!"},{q:"'SCRUTINISED tiny writing' =",o:["Looked closely","Ignored","Threw away","Listened"],a:"Looked closely",h:"Tiny!"},{q:"'TRANQUIL lake, still' =",o:["Calm","Wild","Deep","Hot"],a:"Calm",h:"Still!"},{q:"'VIVID painting, bright' =",o:["Colourful","Dark","Small","Old"],a:"Colourful",h:"Bright!"}],
+parts_of_speech:[{q:"'Run' in 'I run'?",o:["Verb","Noun","Adjective","Adverb"],a:"Verb",h:"Action!"},{q:"'Beautiful'?",o:["Adjective","Noun","Verb","Adverb"],a:"Adjective",h:"Describes!"},{q:"'Quickly'?",o:["Adverb","Adjective","Noun","Verb"],a:"Adverb",h:"How!"},{q:"'Dog' in 'dog barked'?",o:["Noun","Verb","Adjective","Adverb"],a:"Noun",h:"Thing!"},{q:"'And'?",o:["Conjunction","Noun","Verb","Adjective"],a:"Conjunction",h:"Joins!"},{q:"'Softly' in 'sang softly'?",o:["Adverb","Adjective","Noun","Verb"],a:"Adverb",h:"How!"},{q:"'Under' in 'under table'?",o:["Preposition","Noun","Verb","Adjective"],a:"Preposition",h:"Position!"},{q:"'Oh!'?",o:["Interjection","Noun","Verb","Conjunction"],a:"Interjection",h:"Surprise!"}],
+paragraph:[{q:"First sentence?",o:["Topic sentence","Closing","Detail","Transition"],a:"Topic sentence",h:"Main idea!"},{q:"Details should:",o:["Give examples","New topic","End it","Be random"],a:"Give examples",h:"Support!"},{q:"Concluding sentence:",o:["Wraps up","New idea","Question","Lists"],a:"Wraps up",h:"Finish!"},{q:"Transitions help:",o:["Connect ideas","Start paragraphs","Replace periods","Shorten"],a:"Connect ideas",h:"Bridges!"},{q:"Ideas per paragraph?",o:["One","Three","Five","Many"],a:"One",h:"Focus!"},{q:"Good topic sentence?",o:["Dogs make great pets.","Also bark.","Conclusion.","Fetch!"],a:"Dogs make great pets.",h:"Clear!"},{q:"Indenting shows:",o:["New paragraph","Important","Error","Quote"],a:"New paragraph",h:"Signal!"},{q:"Transition word?",o:["Furthermore","The","Dog","Quickly"],a:"Furthermore",h:"Connects!"}],
+main_idea:[{q:"Main idea is:",o:["What it's mostly about","First sentence","Last word","Small detail"],a:"What it's mostly about",h:"Big picture!"},{q:"Details:",o:["Support main idea","Replace it","Are main idea","Contradict"],a:"Support main idea",h:"Evidence!"},{q:"'Bees pollinate, make honey'=",o:["Bees help","Honey sweet","Flowers pretty","Gardens big"],a:"Bees help",h:"About bees!"},{q:"Main idea found:",o:["First or last sentence","Only title","Hidden","Page number"],a:"First or last sentence",h:"Start/end!"},{q:"Detail for 'Exercise important'?",o:["Healthy heart","Pizza good","Sky blue","Books fun"],a:"Healthy heart",h:"Supports!"},{q:"Main idea vs topic:",o:["What author says about topic","One word","In title","A question"],a:"What author says about topic",h:"Claim!"},{q:"All about independent cats =",o:["Cats are independent","Fluffy","Dogs loyal","Animals great"],a:"Cats are independent",h:"Thread!"},{q:"Detail not main idea?",o:["Elephants weigh 12,000 lbs","Elephants amazing","Elephants fascinating","Elephants remarkable"],a:"Elephants weigh 12,000 lbs",h:"Specific fact!"}],
+story_elements:[{q:"Who's in the story?",o:["Characters","Setting","Plot","Theme"],a:"Characters",h:"People!"},{q:"Where and when?",o:["Setting","Characters","Plot","Conflict"],a:"Setting",h:"Place+time!"},{q:"Events =",o:["Plot","Setting","Theme","Characters"],a:"Plot",h:"Happens!"},{q:"Problem?",o:["Conflict","Resolution","Setting","Climax"],a:"Conflict",h:"Challenge!"},{q:"Problem solved?",o:["Resolution","Conflict","Setting","Intro"],a:"Resolution",h:"Solution!"},{q:"Lesson?",o:["Theme","Plot","Setting","Title"],a:"Theme",h:"Learn!"},{q:"Most exciting?",o:["Climax","Beginning","End","Setting"],a:"Climax",h:"Peak!"},{q:"Main character =",o:["Protagonist","Antagonist","Narrator","Author"],a:"Protagonist",h:"Hero!"}],
+poetry_basics:[{q:"Alike at line ends?",o:["Rhyme","Rhythm","Alliteration","Metaphor"],a:"Rhyme",h:"Cat/hat!"},{q:"Beat of poem?",o:["Rhythm","Rhyme","Stanza","Verse"],a:"Rhythm",h:"Music!"},{q:"Group of lines?",o:["Stanza","Paragraph","Chapter","Sentence"],a:"Stanza",h:"Paragraph!"},{q:"'Peter Piper picked'?",o:["Alliteration","Rhyme","Metaphor","Simile"],a:"Alliteration",h:"Same sound!"},{q:"No-rhyme poems?",o:["Free verse","Sonnets","Limericks","Haiku"],a:"Free verse",h:"Free!"},{q:"Haiku lines?",o:["3","4","5","2"],a:"3",h:"5-7-5!"},{q:"Repeating creates:",o:["Emphasis","Confusion","Errors","Nothing"],a:"Emphasis",h:"Power!"},{q:"Writes poems?",o:["Poets","Novelists","Journalists","Editors"],a:"Poets",h:"Poetry!"}],
+figurative:[{q:"'Smile like sunshine'?",o:["Simile","Metaphor","Hyperbole","Personification"],a:"Simile",h:"'like'!"},{q:"'World is a stage'?",o:["Metaphor","Simile","Onomatopoeia","Alliteration"],a:"Metaphor",h:"IS!"},{q:"'Million times!'?",o:["Hyperbole","Simile","Metaphor","Idiom"],a:"Hyperbole",h:"Exaggeration!"},{q:"'Wind whispered'?",o:["Personification","Simile","Hyperbole","Alliteration"],a:"Personification",h:"Human!"},{q:"'Buzz' and 'hiss'?",o:["Onomatopoeia","Metaphor","Simile","Hyperbole"],a:"Onomatopoeia",h:"Sound!"},{q:"'Raining cats & dogs'?",o:["Idiom","Simile","Fact","Personification"],a:"Idiom",h:"Not literal!"},{q:"'She sells seashells'?",o:["Alliteration","Metaphor","Simile","Hyperbole"],a:"Alliteration",h:"Same sound!"},{q:"'Brave as a lion'?",o:["Simile","Metaphor","Idiom","Hyperbole"],a:"Simile",h:"'as'!"}],
+spelling:[{q:"Silent E + -ing?",o:["Drop E","Keep E","Double E","Add -eing"],a:"Drop E",h:"Make→making!"},{q:"I before E after...",o:["C","B","D","G"],a:"C",h:"Receive!"},{q:"Run→running?",o:["Double N","Just add","Drop N","Add -ning"],a:"Double N",h:"Rule!"},{q:"Correct?",o:["Beautiful","Beautifull","Beutiful","Beautyful"],a:"Beautiful",h:"Beauty!"},{q:"Happy plural?",o:["Y→I, add -es","Add -s","Add -ys","Add -ies"],a:"Y→I, add -es",h:"Y rule!"},{q:"Silent letter?",o:["Knight(K)","Basket","Problem","Fantastic"],a:"Knight(K)",h:"Silent K!"},{q:"Phone F?",o:["PH","FF","GH","F"],a:"PH",h:"Greek!"},{q:"CK rule?",o:["back(short+ck)","bake","bark","bank"],a:"back(short+ck)",h:"Short→CK!"}],
+literary_devices:[{q:"'Templeton was a rat'?",o:["Direct characterisation","Simile","Personification","Metaphor"],a:"Direct characterisation",h:"Tells!"},{q:"'Sun smiled down'?",o:["Personification","Simile","Alliteration","Irony"],a:"Personification",h:"Can't smile!"},{q:"Actions show character?",o:["Indirect characterisation","Direct","Foreshadowing","Flashback"],a:"Indirect characterisation",h:"Through actions!"},{q:"Hints of future?",o:["Foreshadowing","Flashback","Irony","Symbolism"],a:"Foreshadowing",h:"Shadows!"},{q:"Reader knows, character doesn't?",o:["Dramatic irony","Simile","Metaphor","Allusion"],a:"Dramatic irony",h:"We know!"},{q:"Reference to another work?",o:["Allusion","Illusion","Simile","Hyperbole"],a:"Allusion",h:"Refer!"},{q:"Object=something bigger?",o:["Symbol","Simile","Allusion","Paradox"],a:"Symbol",h:"Dove=peace!"},{q:"Opposites together?",o:["Paradox/antithesis","Simile","Onomatopoeia","Alliteration"],a:"Paradox/antithesis",h:"Contrast!"}],
+plot_structure:[{q:"Five parts order?",o:["Expo→Rising→Climax→Falling→Res","Climax→Expo→Res→Rising→Fall","Res→Climax→Rising→Fall→Expo","Rising→Climax→Expo→Fall→Res"],a:"Expo→Rising→Climax→Falling→Res",h:"Pyramid!"},{q:"Exposition gives:",o:["Characters, setting","Climax","Resolution","Moral"],a:"Characters, setting",h:"Scene!"},{q:"Rising action:",o:["Builds toward climax","After climax","Introduction","Ending"],a:"Builds toward climax",h:"Building!"},{q:"Turning point?",o:["Climax","Exposition","Resolution","Denouement"],a:"Climax",h:"Peak!"},{q:"Subplot is:",o:["Secondary storyline","Main plot","Climax","Setting"],a:"Secondary storyline",h:"Within!"},{q:"Falling action:",o:["After climax","Before climax","Beginning","Only tragedies"],a:"After climax",h:"Down!"},{q:"Cliffhanger:",o:["Suspense at end","Happy ending","Resolution","Exposition"],a:"Suspense at end",h:"Hanging!"},{q:"Resolution:",o:["Problem solved","Problem begins","Tension builds","Setting intro"],a:"Problem solved",h:"Solved!"}],
+character:[{q:"Changes?",o:["Dynamic","Static","Flat","Minor"],a:"Dynamic",h:"Grows!"},{q:"Same?",o:["Static","Dynamic","Round","Protagonist"],a:"Static",h:"No change!"},{q:"Opposes hero?",o:["Antagonist","Narrator","Author","Mentor"],a:"Antagonist",h:"Against!"},{q:"Well-developed?",o:["Round","Flat","Static","Minor"],a:"Round",h:"Complex!"},{q:"Bored→curious =",o:["Dynamic","Static","Flat","Antagonist"],a:"Dynamic",h:"Changes!"},{q:"Why they act:",o:["Motivation","Setting","Theme","Plot"],a:"Motivation",h:"Reason!"},{q:"Charlotte helps because:",o:["Friendship","Money","Fame","Fear"],a:"Friendship",h:"Cares!"},{q:"Responsible March sister?",o:["Meg","Jo","Amy","Beth"],a:"Meg",h:"Eldest!"}],
+theme:[{q:"Theme is:",o:["Life message","Main character","Setting","First sentence"],a:"Life message",h:"Lesson!"},{q:"Theme not topic?",o:["Friends sacrifice","Friendship","Charlotte's Web","Spider"],a:"Friends sacrifice",h:"Statement!"},{q:"Charlotte's Web theme:",o:["Friendship & sacrifice","Spiders scary","Farm boring","Rats selfish"],a:"Friendship & sacrifice",h:"Charlotte's gift!"},{q:"Themes are:",o:["Universal","Only characters","Paragraph 1","Always happy"],a:"Universal",h:"Many people!"},{q:"Theme vs plot:",o:["Message vs events","Same","Theme first","Plot>theme"],a:"Message vs events",h:"Different!"},{q:"Common theme:",o:["Good triumphs","Ch 3 exciting","Forest","200 pages"],a:"Good triumphs",h:"Universal!"},{q:"Find theme by:",o:["What characters learn","Page number","How many","When published"],a:"What characters learn",h:"Growth!"},{q:"From mistakes→",o:["Growth from failure","Boys err","School hard","Parents strict"],a:"Growth from failure",h:"Learned!"}],
+pov:[{q:"'I walked' =",o:["First person","Third","Second","Omniscient"],a:"First person",h:"'I'!"},{q:"'She walked' =",o:["Third person","First","Second","None"],a:"Third person",h:"She!"},{q:"'You open door' =",o:["Second person","First","Third","Omniscient"],a:"Second person",h:"'You'!"},{q:"Omniscient =",o:["Knows ALL","Knows one","Is character","Doesn't exist"],a:"Knows ALL",h:"All-knowing!"},{q:"Limited =",o:["Knows ONE","Knows all","Is main","Talks to reader"],a:"Knows ONE",h:"Limited!"},{q:"1st person can be:",o:["Unreliable","Always trusted","Omniscient","Non-existent"],a:"Unreliable",h:"Biased!"},{q:"CW narrator =",o:["3rd omniscient","1st person","2nd person","3rd limited"],a:"3rd omniscient",h:"All thoughts!"},{q:"POV matters because:",o:["Shapes understanding","Doesn't","Only title","Changes setting"],a:"Shapes understanding",h:"Everything!"}],
+compare:[{q:"Compare =",o:["Similarities","Differences","Errors","Settings"],a:"Similarities",h:"Alike!"},{q:"Contrast =",o:["Differences","Similarities","Themes","Characters"],a:"Differences",h:"Different!"},{q:"Venn diagram:",o:["Both","Outline","Character map","Timeline"],a:"Both",h:"Circles!"},{q:"Compare words:",o:["Similarly, both","However, but","First, then","Because, so"],a:"Similarly, both",h:"Same!"},{q:"Contrast words:",o:["However, but","Also, likewise","First, next","Because, so"],a:"However, but",h:"Different!"},{q:"Compare characters by:",o:["Traits, motives","Only looks","Setting","Author"],a:"Traits, motives",h:"Deep!"},{q:"Good essay has:",o:["Clear organisation","No intro","Only similar","1 paragraph"],a:"Clear organisation",h:"Structure!"},{q:"Across time shows:",o:["Ideas change","Nothing","Only spelling","Older=better"],a:"Ideas change",h:"Evolves!"}],
+inference:[{q:"Inference =",o:["Conclusion from evidence","Guess","Main idea","Direct fact"],a:"Conclusion from evidence",h:"Evidence+thinking!"},{q:"Grabbed umbrella:",o:["Rain","Likes umbrellas","Sunny","School"],a:"Rain",h:"Why umbrella?"},{q:"To infer, combine:",o:["Text+knowledge","Only title","Only pics","Guesses"],a:"Text+knowledge",h:"Both!"},{q:"Dog wagged, brought leash:",o:["Wants walk","Angry","Sleeping","Sick"],a:"Wants walk",h:"Wag+leash!"},{q:"Inference vs observation:",o:["Beyond stated","Senses only","Always wrong","Same"],a:"Beyond stated",h:"Between lines!"},{q:"Frowned, tore letter:",o:["Upset","Happy","Hungry","Sleepy"],a:"Upset",h:"Frown+tear!"},{q:"'Seems worried' is:",o:["Inference","Fact","Main idea","Theme"],a:"Inference",h:"Interpretation!"},{q:"Infer by asking:",o:["Why?","Only page 1","Skip hard","Read fast"],a:"Why?",h:"Questions!"}],
+text_evidence:[{q:"Text evidence is:",o:["Words supporting answer","Opinion","Guess","Title"],a:"Words supporting answer",h:"From text!"},{q:"You should:",o:["Quote/paraphrase","Make up","Different book","Title only"],a:"Quote/paraphrase",h:"Back to text!"},{q:"'According to text...'=",o:["Introduces evidence","New paragraph","End essay","Question"],a:"Introduces evidence",h:"Signal!"},{q:"Strong evidence:",o:["Supports claim","Replaces thinking","Makes longer","Confuses"],a:"Supports claim",h:"Proves!"},{q:"Best evidence?",o:["Direct quote","I think...","Everyone knows","Friend said"],a:"Direct quote",h:"Source!"},{q:"Paraphrase =",o:["Own words","Copy exactly","Ignore","Make up"],a:"Own words",h:"Your words!"},{q:"'Author states...'=",o:["Signal phrase","Conclusion","Transition","Question"],a:"Signal phrase",h:"Introduces!"},{q:"Need evidence for:",o:["Reading questions","Fav colour","Weather","Maths"],a:"Reading questions",h:"Comprehension!"}],
+grammar_adv:[{q:"Independent clause?",o:["Stands alone","Can't stand","No subject","No verb"],a:"Stands alone",h:"On its own!"},{q:"Dependent clause:",o:["Can't stand alone","Complete","No subject","No verb"],a:"Can't stand alone",h:"Depends!"},{q:"'Although tired' =",o:["Dependent","Independent","Complete","Phrase"],a:"Dependent",h:"Although!"},{q:"Compound uses:",o:["Comma+FANBOYS","Just comma","Nothing","Period"],a:"Comma+FANBOYS",h:"F,A,N,B,O,Y,S!"},{q:"Complex sentence?",o:["Because rained, stayed.","I ran. Jumped.","Like cats and dogs.","Stop!"],a:"Because rained, stayed.",h:"Ind+dep!"},{q:"Semicolon:",o:["Two related clauses","Word+definition","List","Title"],a:"Two related clauses",h:"Soft period!"},{q:"Active voice?",o:["Cat chased mouse.","Mouse was chased.","Chased was mouse.","Mouse, chased."],a:"Cat chased mouse.",h:"Subject acts!"},{q:"Misplaced modifier:",o:["Confusing","Better","Shorter","Fine"],a:"Confusing",h:"Who drove?"}],
+vocab_context:[{q:"'Benevolent, helped poor'=",o:["Kind","Cruel","Rich","Old"],a:"Kind",h:"Helped!"},{q:"'Arduous, took months'=",o:["Difficult","Short","Fun","Easy"],a:"Difficult",h:"Months!"},{q:"'Meticulous planner'=",o:["Careful","Careless","Quick","Lazy"],a:"Careful",h:"Detailed!"},{q:"'Ephemeral, faded'=",o:["Short-lived","Eternal","Ugly","Bright"],a:"Short-lived",h:"Faded!"},{q:"'Gregarious, popular'=",o:["Sociable","Shy","Angry","Quiet"],a:"Sociable",h:"Popular!"},{q:"'Pragmatic'=",o:["Practical","Dreamy","Angry","Confused"],a:"Practical",h:"Works!"},{q:"'Austere, bare'=",o:["Plain","Decorated","Colourful","Messy"],a:"Plain",h:"Bare!"},{q:"'Candid answer'=",o:["Honest","Dishonest","Confusing","Long"],a:"Honest",h:"Direct!"}],
+essay:[{q:"3 parts:",o:["Intro, body, conclusion","Start, middle, climax","Title, body, end","Q, A, summary"],a:"Intro, body, conclusion",h:"Classic!"},{q:"Thesis:",o:["Main argument","Title","Last sentence","Optional"],a:"Main argument",h:"Claim!"},{q:"Body:",o:["Supports thesis","Repeats intro","New thesis","One sentence"],a:"Supports thesis",h:"Evidence!"},{q:"Conclusion:",o:["Summarise","New arguments","Copy intro","Question"],a:"Summarise",h:"Wrap up!"},{q:"'Hook'=",o:["Engaging opening","Fishing","Last sentence","Punctuation"],a:"Engaging opening",h:"Grabs!"},{q:"Transitions:",o:["Connect smoothly","Make longer","Confuse","Replace evidence"],a:"Connect smoothly",h:"Bridges!"},{q:"Counter-argument:",o:["Other side","Weakens","Avoid","Is thesis"],a:"Other side",h:"Fair!"},{q:"Best thesis?",o:["Reading improves thinking.","Reading good.","I like books.","Books."],a:"Reading improves thinking.",h:"Specific!"}],
+rhetoric:[{q:"Ethos=",o:["Credibility","Emotion","Logic","Audience"],a:"Credibility",h:"Character!"},{q:"Pathos=",o:["Emotion","Logic","Character","Time"],a:"Emotion",h:"Feelings!"},{q:"Logos=",o:["Logic","Emotion","Character","Tradition"],a:"Logic",h:"Reason!"},{q:"Stats use:",o:["Logos","Pathos","Ethos","Kairos"],a:"Logos",h:"Numbers!"},{q:"Doctor expertise=",o:["Ethos","Pathos","Logos","Irony"],a:"Ethos",h:"Credibility!"},{q:"Suffering ad=",o:["Pathos","Logos","Ethos","Syntax"],a:"Pathos",h:"Emotional!"},{q:"Rhetorical situation:",o:["Speaker,audience,purpose","Only speaker","Only words","Only end"],a:"Speaker,audience,purpose",h:"Context!"},{q:"Kairos=",o:["Right moment","Emotion","Fallacy","Bio"],a:"Right moment",h:"Timing!"}],
+lit_crit:[{q:"Literary criticism:",o:["How lit works","How to criticise","Grammar","Covers"],a:"How lit works",h:"Analysis!"},{q:"Feminist lens:",o:["Gender & power","Female only","Romance","Spelling"],a:"Gender & power",h:"Power!"},{q:"Historical lens:",o:["Time & context","Only plot","Characters","Price"],a:"Time & context",h:"History!"},{q:"Close reading:",o:["Careful analysis","Speed read","First page","Memorise"],a:"Careful analysis",h:"Slow!"},{q:"Biographical:",o:["Life→work","Ignores author","Grammar","Publisher"],a:"Life→work",h:"Life!"},{q:"New Criticism:",o:["Text itself","Bio","History","Reader"],a:"Text itself",h:"Words!"},{q:"Reader-response:",o:["Reader's view","Author only","History","Grammar"],a:"Reader's view",h:"Reader!"},{q:"Psychoanalytic:",o:["Unconscious desires","Setting","Plot","Spelling"],a:"Unconscious desires",h:"Freud!"}],
+argument:[{q:"Strong argument:",o:["Claim+evidence","Only opinions","No evidence","Attacks"],a:"Claim+evidence",h:"Proof!"},{q:"Fallacy=",o:["Error in reasoning","Strong argument","Evidence","Thesis"],a:"Error in reasoning",h:"Flawed!"},{q:"Ad hominem:",o:["Attacks person","Uses evidence","Logic","Valid"],a:"Attacks person",h:"Person!"},{q:"Straw man:",o:["Misrepresents","Strong","Good evidence","Fair"],a:"Misrepresents",h:"Weaker!"},{q:"Concession:",o:["Acknowledges other side","Gives up","Unnecessary","Weakens"],a:"Acknowledges other side",h:"Fair!"},{q:"Best evidence:",o:["Facts+experts","Anecdotes","Emotions","General"],a:"Facts+experts",h:"Facts!"},{q:"Rebuttal=",o:["Response to counter","Intro","Title","Fallacy"],a:"Response to counter",h:"Answer!"},{q:"'Everyone knows'=",o:["Bandwagon","Straw man","Ad hominem","Red herring"],a:"Bandwagon",h:"Popularity!"}],
+classical:[{q:"Odyssey by:",o:["Homer","Virgil","Sophocles","Plato"],a:"Homer",h:"Greek!"},{q:"Odyssey about:",o:["Journey home","Romeo+Juliet","Whale","Revolution"],a:"Journey home",h:"Voyage!"},{q:"Epic=",o:["Long heroic poem","Short poem","Play","News"],a:"Long heroic poem",h:"Grand!"},{q:"Greek tragedies:",o:["Fatal flaw","Happy end","Comedy","Modern"],a:"Fatal flaw",h:"Hamartia!"},{q:"Iliad about:",o:["Trojan War","French Rev","WWI","Renaissance"],a:"Trojan War",h:"Ancient!"},{q:"Hubris=",o:["Excessive pride","Wisdom","Sadness","Loyalty"],a:"Excessive pride",h:"Pride!"},{q:"Greek chorus:",o:["Commented","Sang","Main character","Wrote"],a:"Commented",h:"Voice!"},{q:"Poetics discusses:",o:["Drama principles","Maths","Politics","Science"],a:"Drama principles",h:"Foundations!"}],
+poetry_adv:[{q:"Pentameter feet:",o:["5","3","7","10"],a:"5",h:"Penta!"},{q:"Sonnet lines:",o:["14","10","16","12"],a:"14",h:"Classic!"},{q:"Enjambment:",o:["Continues past line","Rhymes","Alliteration","Stanza ends"],a:"Continues past line",h:"Runs over!"},{q:"Volta=",o:["Turn in thought","Title","Last word","Rhyme"],a:"Turn in thought",h:"Shift!"},{q:"Consonance:",o:["Consonant sounds","Vowels","Lines","Stanzas"],a:"Consonant sounds",h:"Consonants!"},{q:"Assonance:",o:["Vowel sounds","Consonants","Sentences","Schemes"],a:"Vowel sounds",h:"Vowels!"},{q:"ABAB=",o:["1&3,2&4 rhyme","Every line","No rhyme","First&last"],a:"1&3,2&4 rhyme",h:"Alternating!"},{q:"Free verse:",o:["No metre","Must rhyme","14 lines","Always short"],a:"No metre",h:"Free!"}],
+research:[{q:"Primary source:",o:["Original/firsthand","Analysis","Textbook","Wikipedia"],a:"Original/firsthand",h:"Source!"},{q:"Secondary:",o:["Analyses primaries","Original","Unreliable","Diary"],a:"Analyses primaries",h:"One step!"},{q:"MLA for:",o:["English","Science","Maths","Code"],a:"English",h:"MLA!"},{q:"Plagiarism=",o:["Without credit","Citing","Paraphrasing","Own words"],a:"Without credit",h:"Credit!"},{q:"Annotated bib:",o:["Citations+summaries","Titles","Links","No descriptions"],a:"Citations+summaries",h:"Notes!"},{q:"Most reliable?",o:["Peer-reviewed","Blog","Social media","Forum"],a:"Peer-reviewed",h:"Expert!"},{q:"Thesis should be:",o:["Specific, arguable","Vague","Question","One word"],a:"Specific, arguable",h:"Focused!"},{q:"In-text citations:",o:["Show source","Lengthen","Replace bib","Confuse"],a:"Show source",h:"Credit!"}],
+syntax:[{q:"Syntax=",o:["Word arrangement","Meaning","Spelling","Sound"],a:"Word arrangement",h:"Order!"},{q:"Short sentences=",o:["Tension","Relaxation","Confusion","Boredom"],a:"Tension",h:"Quick!"},{q:"Long sentences=",o:["Reflection","Anger","Simplicity","Speed"],a:"Reflection",h:"Time!"},{q:"Parallelism:",o:["Similar structures","Same twice","Only short","No repetition"],a:"Similar structures",h:"Balance!"},{q:"Voice=",o:["Unique style","Volume","Accent","Name"],a:"Unique style",h:"Recognisable!"},{q:"Diction=",o:["Word choice","Length","Paragraphs","Punctuation"],a:"Word choice",h:"Words!"},{q:"Formal for:",o:["Academic","Texts","Chat","Social"],a:"Academic",h:"Professional!"},{q:"Inverted:",o:["Verb before subject","Normal","Period first","Title last"],a:"Verb before subject",h:"Reversed!"}],
+world_lit:[{q:"Don Quixote:",o:["Spain","France","Italy","England"],a:"Spain",h:"Cervantes!"},{q:"Les Mis by:",o:["Hugo","Dickens","Tolstoy","Dostoevsky"],a:"Hugo",h:"French!"},{q:"War&Peace by:",o:["Tolstoy","Hugo","Homer","Shakespeare"],a:"Tolstoy",h:"Russian!"},{q:"Genji from:",o:["Japan","China","India","Korea"],a:"Japan",h:"Murasaki!"},{q:"1001 Nights:",o:["Middle East","Europe","Americas","Australia"],a:"Middle East",h:"Scheherazade!"},{q:"García Márquez:",o:["Magical realism","British poetry","American drama","Haiku"],a:"Magical realism",h:"Latin American!"},{q:"Things Fall Apart:",o:["Nigeria","S.Africa","Kenya","Egypt"],a:"Nigeria",h:"Igbo!"},{q:"World lit=",o:["Diverse cultures","One country","Only English","Only ancient"],a:"Diverse cultures",h:"World!"}],
+shakespeare:[{q:"'What's in a name?':",o:["Juliet","Romeo","Nurse","Friar"],a:"Juliet",h:"Names!"},{q:"Hamlet theme:",o:["Revenge","Love","Adventure","Friendship"],a:"Revenge",h:"To be!"},{q:"Soliloquy=",o:["Aloud, alone","Two people","Letter","Song"],a:"Aloud, alone",h:"Solo!"},{q:"Wrote in:",o:["Iambic pentameter","Free verse","Haiku","Prose"],a:"Iambic pentameter",h:"da-DUM!"},{q:"Macbeth about:",o:["Ambition","Happy king","Comedy","Love"],a:"Ambition",h:"Corruption!"},{q:"Comedies end:",o:["Marriage","Death","Nothing","War"],a:"Marriage",h:"Happy!"},{q:"Globe Theatre:",o:["Shakespeare's","School","Church","Library"],a:"Shakespeare's",h:"London!"},{q:"'All world's a stage':",o:["As You Like It","Hamlet","Macbeth","Othello"],a:"As You Like It",h:"Jacques!"}],
+american_lit:[{q:"Mockingbird set:",o:["South 1930s","NYC 1960s","London","CA 1990s"],a:"South 1930s",h:"Alabama!"},{q:"Scarlet Letter:",o:["Sin, guilt","Space","Tech","Comedy"],a:"Sin, guilt",h:"Hester!"},{q:"'The Raven':",o:["Poe","Twain","Whitman","Dickinson"],a:"Poe",h:"Nevermore!"},{q:"Twain:",o:["Huck Finn","Gatsby","Moby Dick","Scarlet Letter"],a:"Huck Finn",h:"Mississippi!"},{q:"Harlem Ren:",o:["AA cultural mvmt","Architecture","European","Party"],a:"AA cultural mvmt",h:"1920s!"},{q:"Hughes:",o:["Harlem Ren","Beat Gen","Transcend","Romantic"],a:"Harlem Ren",h:"Poet!"},{q:"Transcendentalism:",o:["Nature","Strict rules","Urban","Scientific"],a:"Nature",h:"Emerson!"},{q:"Gatsby:",o:["Dream corruption","Farm","Space","Knights"],a:"Dream corruption",h:"Fitzgerald!"}],
+british_lit:[{q:"P&P by:",o:["Austen","Brontë","Dickens","Woolf"],a:"Austen",h:"Darcy!"},{q:"Jane Eyre:",o:["Independence","Space","Revolution","Comedy"],a:"Independence",h:"Governess!"},{q:"Dickens:",o:["Social inequality","Greece","Frontier","Sci-fi"],a:"Social inequality",h:"Victorian!"},{q:"Romantic period:",o:["Emotion, nature","Science","Rules","Urban"],a:"Emotion, nature",h:"Wordsworth!"},{q:"Woolf:",o:["Stream of consciousness","Detective","Children's","War"],a:"Stream of consciousness",h:"Dalloway!"},{q:"1984:",o:["Dystopian","Comedy","Romance","Travel"],a:"Dystopian",h:"Big Brother!"},{q:"Canterbury Tales:",o:["Chaucer","Shakespeare","Milton","Austen"],a:"Chaucer",h:"Father!"},{q:"Beowulf:",o:["Oldest English lit","Modern","Shakespeare","Victorian"],a:"Oldest English lit",h:"Anglo-Saxon!"}]
+};
+// Reading books data
+const BOOKS={elementary:[{t:"Charlotte's Web",a:"E.B. White",e:"🕷️",qs:[{q:"Why help Wilbur?",o:["Friendship","Money","Bored","Templeton"],a:"Friendship"},{q:"What in web?",o:["Praising words","Name","Map","Nothing"],a:"Praising words"},{q:"Theme?",o:["Friendship","Adventure","Mystery","Time"],a:"Friendship"}]},{t:"The Secret Garden",a:"F.H. Burnett",e:"🌹",qs:[{q:"Mary discovers?",o:["Hidden garden","Treasure","Portal","Animal"],a:"Hidden garden"},{q:"Garden changes Mary?",o:["Kinder","Meaner","Lazier","No change"],a:"Kinder"},{q:"Theme?",o:["Nature heals","Tech","Cities","School"],a:"Nature heals"}]}],middle:[{t:"Phantom Tollbooth",a:"N. Juster",e:"🚗",qs:[{q:"Milo at start?",o:["Bored","Excited","Angry","Studious"],a:"Bored"},{q:"Tollbooth=",o:["Learning gateway","Regular","Punishment","Boring"],a:"Learning gateway"},{q:"Milo changes?",o:["Curious","Same","Angrier","Scared"],a:"Curious"}]},{t:"A Wrinkle in Time",a:"M. L'Engle",e:"🌀",qs:[{q:"Tesseract?",o:["Space-time travel","Food","Weapon","Book"],a:"Space-time travel"},{q:"Defeats IT?",o:["Love","Sword","Science","Run"],a:"Love"},{q:"Meg's strength?",o:["Family love","Physical","Wealth","Popular"],a:"Family love"}]}],high:[{t:"To Kill a Mockingbird",a:"Harper Lee",e:"🐦",qs:[{q:"Narrator?",o:["Scout","Atticus","Boo","Tom"],a:"Scout"},{q:"Atticus=",o:["Moral courage","Wealth","Revenge","Cowardice"],a:"Moral courage"},{q:"Theme?",o:["Racial injustice","Comedy","Romance","Adventure"],a:"Racial injustice"}]},{t:"Pride and Prejudice",a:"Jane Austen",e:"💌",qs:[{q:"Elizabeth to Darcy?",o:["Dislike","Love","Indifference","Fear"],a:"Dislike"},{q:"Title=",o:["Wrong impressions","Money","No love","Perfect"],a:"Wrong impressions"},{q:"Satirises?",o:["Class & marriage","Science","War","Education"],a:"Class & marriage"}]}]};
+const RES={early:[{l:"Ask a grown-up to read! 📖"},{l:"Starfall.com",u:"https://www.starfall.com"},{l:"PBS Kids",u:"https://pbskids.org"}],foundation:[{l:"Khan Academy Kids",u:"https://learn.khanacademy.org/khan-academy-kids/"},{l:"Starfall",u:"https://www.starfall.com"}],elementary:[{l:"Khan Academy ELA",u:"https://www.khanacademy.org/ela"},{l:"CommonLit",u:"https://www.commonlit.org"}],middle:[{l:"CommonLit",u:"https://www.commonlit.org"},{l:"Project Gutenberg",u:"https://www.gutenberg.org"}],high:[{l:"Project Gutenberg",u:"https://www.gutenberg.org"},{l:"LibriVox",u:"https://librivox.org"}]};
 
-// ===== STORAGE =====
+// ===== SMALL COMPONENTS =====
+function Confetti(){const c=["#FF6B6B","#FFD166","#06D6A0","#2D6BE4","#9B7FCF","#FF9FF3","#54A0FF"];return <div>{Array.from({length:40},(_,i)=><div key={i} className="confetti" style={{left:Math.random()*100+"%",backgroundColor:c[i%c.length],width:8+Math.random()*8,height:8+Math.random()*8,animationDelay:Math.random()+"s",animationDuration:2+Math.random()+"s",borderRadius:Math.random()>.5?"50%":"2px"}}/>)}</div>}
+function PBar({c:cur,t}){return <div className="pbar"><div className="pfill" style={{width:(t>0?cur/t*100:0)+"%"}}/></div>}
+function Badge({level}){const m={mastered:["b-m","✓ Mastered"],learning:["b-l","📈 Learning"],growing:["b-g","🌱 Growing"],new:["b-n","✨ New"]};const[c,t]=m[level]||m.new;return <span className={"badge "+c}>{t}</span>}
+
+function PinModal({title,onOk,onClose,pin:cp}){
+  const[p,sP]=useState("");const[err,sE]=useState(false);
+  const tap=d=>{if(p.length>=4)return;const n=p+d;sP(n);sE(false);if(n.length===4){if(n===cp)onOk();else{sE(true);setTimeout(()=>{sP("");sE(false)},600)}}};
+  return <div className="pov" onClick={onClose}><div className="pmod" onClick={e=>e.stopPropagation()}>
+    <h2>{title}</h2><p className="tm mt8" style={{fontSize:".85rem"}}>4-digit PIN</p>
+    <div className="pdots">{[0,1,2,3].map(i=><div key={i} className={"pdot"+(i<p.length?" f":"")} style={err?{borderColor:"var(--coral)",background:i<p.length?"var(--coral)":"transparent"}:{}}/>)}</div>
+    {err&&<p style={{color:"var(--coral)",fontWeight:700,fontSize:".85rem"}}>Incorrect PIN</p>}
+    <div className="pnpad mt12">{[1,2,3,4,5,6,7,8,9].map(d=><button key={d} className="pkey" onClick={()=>tap(String(d))}>{d}</button>)}
+    <button className="pkey" onClick={()=>{sP(p.slice(0,-1));sE(false)}} style={{fontSize:"1rem"}}>⌫</button>
+    <button className="pkey" onClick={()=>tap("0")}>0</button>
+    <button className="pkey" onClick={onClose} style={{fontSize:"1rem",color:"var(--coral)"}}>✕</button></div>
+  </div></div>;
+}
+
+// ===== EACH SCREEN AS ITS OWN COMPONENT =====
+function FamilySetup({onDone}){
+  const[mode,setMode]=useState(null);const[code,setCode]=useState("");
+  return <div className="app"><div className="tc" style={{paddingTop:40}}>
+    <div style={{fontSize:"4rem",marginBottom:8}}>📚</div><h1>Word Adventure</h1>
+    <p className="tm mt8" style={{fontSize:".95rem"}}>A joyful language arts companion for your family</p>
+    {!mode&&<div className="mt24" style={{display:"flex",flexDirection:"column",gap:12}}>
+      <button className="btn bp bw" onClick={()=>setMode("c")}>🏠 Create New Family</button>
+      <button className="btn bs bw" onClick={()=>setMode("j")}>🔗 Join with Code</button></div>}
+    {mode==="c"&&<div className="card mt24"><h3>Create Your Family</h3><p className="tm mt8" style={{fontSize:".88rem"}}>Share a unique code across devices</p>
+      <button className="btn bp bw mt16" onClick={()=>onDone(genCode(),"create")}>Create Family ✨</button>
+      <button className="bb mt12" onClick={()=>setMode(null)}>← Back</button></div>}
+    {mode==="j"&&<div className="card mt24"><h3>Join a Family</h3><label className="lbl mt12">Family Code</label>
+      <input className="inp" placeholder="WA-XXXX" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} maxLength={7}/>
+      <button className="btn bp bw mt16" onClick={()=>{if(code.length>=6)onDone(code.toUpperCase(),"join")}}>Join Family</button>
+      <button className="bb mt12" onClick={()=>setMode(null)}>← Back</button></div>}
+  </div></div>;
+}
+
+function CreateProfile({country,onSave,onBack}){
+  const[nm,setNm]=useState("");const[gr,setGr]=useState("K");const[av,setAv]=useState(AVATARS[0]);
+  return <div className="app"><button className="bb" onClick={onBack}>← Back</button><h2 className="mt8">Add a Learner ✨</h2>
+    <div className="card mt16"><label className="lbl">Name</label><input className="inp" value={nm} onChange={e=>setNm(e.target.value)} placeholder="Learner's name" maxLength={20}/>
+    <label className="lbl mt16">Avatar</label><div className="fx fw g8">{AVATARS.map(a=><button key={a} onClick={()=>setAv(a)} style={{fontSize:"1.8rem",background:av===a?"#e8f4fd":"transparent",border:av===a?"2px solid var(--blue)":"2px solid transparent",borderRadius:12,padding:"5px 7px",cursor:"pointer"}}>{a}</button>)}</div>
+    <label className="lbl mt16">Grade</label><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8}}>{GRADES.map(g=><button key={g.id} onClick={()=>setGr(g.id)} style={{padding:"9px 8px",borderRadius:12,border:gr===g.id?"2px solid var(--blue)":"2px solid #e0e4ea",background:gr===g.id?"#e8f4fd":"#fff",cursor:"pointer",textAlign:"left",fontFamily:"'Nunito'",fontWeight:600,fontSize:".8rem"}}>{g.e} {gL(g.id,country)} <span className="tm">({g.age})</span></button>)}</div>
+    <button className="btn bp bw mt24" onClick={()=>{if(nm.trim())onSave({id:Date.now()+Math.random(),name:nm.trim(),gradeId:gr,avatar:av,topicProgress:{},quizHistory:[],createdAt:Date.now(),terms:{activity:"Activity",flashcards:"Flash Cards",correct:"",wrong:""},wrongColour:"red"})}} disabled={!nm.trim()}>Add Learner 🎉</button></div></div>;
+}
+
+function FeedbackScreen({onBack}){
+  const[stars,setStars]=useState(0);const[sent,setSent]=useState(false);
+  if(sent)return <div className="app tc" style={{paddingTop:60}}><div style={{fontSize:"3rem"}}>💛</div><h1 className="mt8">Thank you!</h1><p className="tm mt8">Your feedback helps improve Word Adventure</p><button className="btn bp bw mt24" onClick={onBack}>Home</button></div>;
+  return <div className="app"><button className="bb" onClick={onBack}>← Home</button><h2 className="mt8">⭐ Feedback</h2>
+    <div className="card mt16 tc"><p style={{fontWeight:600}}>Enjoying Word Adventure?</p>
+    <div className="mt12 fx jc g8">{[1,2,3,4,5].map(s=><button key={s} className="star-b" onClick={()=>setStars(s)} style={{opacity:s<=stars?1:.3}}>{s<=stars?"⭐":"☆"}</button>)}</div>
+    <button className="btn bp bw mt16" onClick={()=>{if(stars>0)setSent(true)}} disabled={stars===0}>Send 💛</button></div></div>;
+}
+
+// ===== MAIN APP (no hooks in conditionals!) =====
+function App(){
+  const[profiles,setProfiles]=useState(()=>ls.g(SK,[]));
+  const[country,setCountry]=useState(()=>ls.r(SK_C,"IE"));
+  const[familyCode,setFamilyCode]=useState(()=>ls.r(SK_F,""));
+  const[parentPin,setParentPin]=useState(()=>ls.r(SK_PP,"1234"));
+  const[scr,setScr]=useState(()=>ls.r(SK_F,"")?"home":"setup");
+  const[sel,setSel]=useState(null);
+  const[pinCb,setPinCb]=useState(null);
+  const[ntf,setNtf]=useState(null);
+  const[showC,setSC]=useState(false);
+  const[parentTab,setPTab]=useState("overview");
+  // Activity
+  const[aTopic,setAT]=useState(null);const[aQs,setAQs]=useState([]);const[aIdx,setAI]=useState(0);const[aScore,setAS]=useState(0);const[aAns,setAA]=useState(false);const[aSel,setASl]=useState(null);
+  // Flash
+  const[fTopic,setFT]=useState(null);const[fCards,setFC]=useState([]);const[fIdx,setFI]=useState(0);const[fRev,setFR]=useState(false);const[fGot,setFG]=useState(0);const[fTot,setFTot]=useState(0);
+  // Reading
+  const[rBook,setRB]=useState(null);const[rIdx,setRI]=useState(0);const[rAns,setRA]=useState(false);const[rSel,setRSl]=useState(null);const[rScore,setRS]=useState(0);
+
+  useEffect(()=>{ls.s(SK,profiles)},[profiles]);
+  useEffect(()=>{ls.w(SK_C,country)},[country]);
+  useEffect(()=>{ls.w(SK_F,familyCode)},[familyCode]);
+  useEffect(()=>{ls.w(SK_PP,parentPin)},[parentPin]);
+
+  const notify=(m,d=2500)=>{setNtf(m);setTimeout(()=>setNtf(null),d)};
+  const prof=sel!==null?profiles.find(p=>p.id===sel):null;
+  const isE=prof?gB(prof.gradeId)==="early":false;
+  const actLbl=prof?.terms?.activity||"Activity";
+  const updProf=(id,fn)=>setProfiles(prev=>prev.map(p=>p.id===id?fn({...p}):p));
+  const cF={IE:"🇮🇪",UK:"🇬🇧",US:"🇺🇸"};
+  const tapRef=useRef(0);const tapTm=useRef(null);
+
+  // Render notification
+  const Ntf=ntf?<div className="ntf">{ntf}</div>:null;
+
+  // ===== SETUP =====
+  if(scr==="setup") return <FamilySetup onDone={(code,mode)=>{setFamilyCode(code);notify(mode==="create"?"Family created! "+code:"Joined "+code,3000);setScr("home")}}/>;
+
+  // ===== CREATE PROFILE =====
+  if(scr==="create") return <CreateProfile country={country} onSave={p=>{setProfiles(prev=>[...prev,p]);setScr("home")}} onBack={()=>setScr("home")}/>;
+
+  // ===== FEEDBACK =====
+  if(scr==="feedback") return <FeedbackScreen onBack={()=>setScr("home")}/>;
+
+  // ===== HOME =====
+  if(scr==="home") return <div className="app">
+    <div className="fx jb ac mb16 fw g8">
+      <div className="fx ac g8" style={{cursor:"pointer"}} onClick={()=>{tapRef.current++;if(tapRef.current>=3){tapRef.current=0;notify("Admin coming soon!")}clearTimeout(tapTm.current);tapTm.current=setTimeout(()=>tapRef.current=0,800)}}>
+        <span style={{fontSize:"1.8rem"}}>📚</span><span style={{fontFamily:"'Baloo 2'",fontWeight:800,fontSize:"1.4rem",color:"var(--navy)"}}>Word Adventure</span></div>
+      <button className="country-b" onClick={()=>setSC(!showC)}>{cF[country]} {country}</button></div>
+    {showC&&<div className="card" style={{padding:12}}><div className="fx g8">{[{c:"IE",f:"🇮🇪",n:"Ireland"},{c:"UK",f:"🇬🇧",n:"UK"},{c:"US",f:"🇺🇸",n:"US"}].map(x=><button key={x.c} className={"btn "+(country===x.c?"bp":"bs")} style={{flex:1,fontSize:".82rem"}} onClick={()=>{setCountry(x.c);setSC(false)}}>{x.f} {x.n}</button>)}</div></div>}
+    <div className="banner bi">📖 Who's learning today?</div>
+    <div className="pgrid">
+      {profiles.map((p,i)=><div key={p.id} className="pcard" style={{animationDelay:i*.05+"s"}} onClick={()=>{setSel(p.id);setScr("dash")}}>
+        <div style={{fontSize:"2.6rem",lineHeight:1,marginBottom:6}}>{p.avatar}</div>
+        <div style={{fontFamily:"'Baloo 2'",fontWeight:700,fontSize:"1rem",color:"var(--navy)"}}>{p.name}</div>
+        <div style={{fontSize:".76rem",color:"var(--muted)"}}>{gG(p.gradeId).e} {gL(p.gradeId,country)}</div></div>)}
+      <div className="pcard" style={{background:"#f0f4ff",border:"3px dashed #c0d0f0",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:120}}
+        onClick={()=>setPinCb(()=>()=>{setPinCb(null);setScr("create")})}><div style={{fontSize:"2rem",color:"var(--blue)"}}>+</div><div style={{fontWeight:700,color:"var(--blue)",fontSize:".82rem"}}>Add Learner</div></div>
+    </div>
+    <div className="mt24 fx g12 fw"><button className="btn bs" style={{flex:1}} onClick={()=>setPinCb(()=>()=>{setPinCb(null);setScr("parent")})}>👨‍👩‍👧 Parent Mode</button></div>
+    {familyCode&&<div className="tc mt16"><span className="tm" style={{fontSize:".78rem"}}>Family: {familyCode}</span></div>}
+    <button className="ffloat" onClick={()=>setScr("feedback")}>⭐</button>
+    {pinCb&&<PinModal title="Parent PIN" pin={parentPin} onOk={pinCb} onClose={()=>setPinCb(null)}/>}
+    {Ntf}</div>;
+
+  // ===== DASHBOARD =====
+  if(scr==="dash"&&prof){const band=gB(prof.gradeId);const showR=["elementary","middle","high"].includes(band);
+    return <div className="app"><button className="bb" onClick={()=>{setSel(null);setScr("home")}}>← Home</button>
+      <div className="fx ac g12 mt8 mb16"><span style={{fontSize:"2.4rem"}}>{prof.avatar}</span><div><h2 style={{margin:0}}>{prof.name}</h2><span className="tm" style={{fontSize:".82rem"}}>{gG(prof.gradeId).e} {gL(prof.gradeId,country)}</span></div></div>
+      <div style={{display:"grid",gap:12}}>
+        <button className="btn bp bw" style={{fontSize:"1.05rem",padding:"16px"}} onClick={()=>setScr("tsel-f")}>📚 {prof.terms?.flashcards||"Flash Cards"}</button>
+        <button className="btn bw" style={{fontSize:"1.05rem",padding:"16px",background:"#7C5CFC",color:"#fff"}} onClick={()=>setScr("tsel-a")}>🌟 {actLbl} Mode</button>
+        {showR&&<button className="btn bw" style={{fontSize:"1.05rem",padding:"16px",background:"#E8651A",color:"#fff"}} onClick={()=>setScr("reading")}>📖 Reading Companion</button>}
+        <button className="btn bs bw" onClick={()=>setScr("progress")}>📊 My Progress</button></div>{Ntf}</div>}
+
+  // ===== TOPIC SELECT =====
+  if((scr==="tsel-f"||scr==="tsel-a")&&prof){const mode=scr==="tsel-f"?"flash":"act";const topics=topicsFor(prof.gradeId);
+    return <div className="app"><button className="bb" onClick={()=>setScr("dash")}>← Dashboard</button>
+      <h2 className="mt8">{mode==="flash"?"📚 Flash Cards":"🌟 "+actLbl} — Pick a Topic</h2>
+      <div className="mt16">{topics.map((t,i)=>{const tp=prof.topicProgress?.[t.k];const lvl=masLvl(tp);
+        return <div key={t.k} className="tcard" style={{animationDelay:i*.04+"s"}} onClick={()=>{const qs=Q[t.k];if(!qs?.length){notify("Coming soon!");return}
+          if(mode==="flash"){setFT(t);setFC(shuffle(qs));setFI(0);setFR(false);setFG(0);setFTot(0);setScr("flash")}
+          else{setAT(t);setAQs(shuffle(qs).slice(0,10));setAI(0);setAS(0);setAA(false);setASl(null);setScr("activity")}}}>
+          <div style={{fontSize:"1.6rem",flexShrink:0}}>{t.e}</div><div style={{flex:1}}><div style={{fontWeight:700,fontSize:".92rem",color:"var(--navy)"}}>{t.l}</div>
+          <div className="tm" style={{fontSize:".76rem"}}>{tp?`${tp.co||0}/${tp.at||0} correct`:"Not started"}</div></div><Badge level={lvl}/></div>})}</div>{Ntf}</div>}
+
+  // ===== FLASH =====
+  if(scr==="flash"&&fTopic&&fCards.length){const card=fCards[fIdx];
+    return <div className="app"><button className="bb" onClick={()=>setScr("tsel-f")}>← Topics</button>
+      <div className="fx jb ac mt8 mb12"><h3>{fTopic.e} {fTopic.l}</h3><span className="tm">{fIdx+1}/{fCards.length}</span></div><PBar c={fIdx} t={fCards.length}/>
+      <div className="flash-i mt24" onClick={()=>setFR(!fRev)}>
+        {!fRev?<><div style={{fontSize:isE?"1.6rem":"1.05rem",fontWeight:700,color:"var(--navy)"}}>{card.q}</div><p className="hint mt12">Tap to reveal</p></>
+        :<><div className="tm mb8" style={{fontSize:".88rem"}}>Answer:</div><div style={{fontSize:isE?"1.5rem":"1.2rem",fontWeight:800,color:"var(--mint)"}}>{card.a}</div>{card.h&&<p className="hint mt8">{card.h}</p>}</>}
+      </div>
+      {fRev&&<div className="fx g12 mt24 jc"><button className="btn bg" style={{flex:1}} onClick={()=>{setFTot(p=>p+1);setFG(p=>p+1);if(fIdx<fCards.length-1){setFI(fIdx+1);setFR(false)}else setScr("flashR")}}>✅ Got it!</button>
+        <button className="btn br" style={{flex:1}} onClick={()=>{setFTot(p=>p+1);if(fIdx<fCards.length-1){setFI(fIdx+1);setFR(false)}else setScr("flashR")}}>🔄 Review</button></div>}</div>}
+
+  if(scr==="flashR") return <div className="app tc" style={{paddingTop:36}}>{fGot>=fTot*.8&&<Confetti/>}
+    <div style={{fontSize:"3.5rem"}}>{fGot>=fTot*.8?"🏆":"📚"}</div><h1 className="mt8">Flash Cards Complete!</h1>
+    <p className="mt8" style={{fontSize:"1.15rem",fontWeight:700}}>Got <span style={{color:"var(--mint)"}}>{fGot}</span> of {fTot}</p>
+    <p className="tm mt8">{fGot>=fTot*.8?"Amazing! ✨":"Keep growing! 🌱"}</p><p className="mt16 tm" style={{fontSize:".88rem"}}>📖 Read a real book today!</p>
+    <button className="btn bp bw mt24" onClick={()=>setScr("dash")}>Dashboard</button></div>;
+
+  // ===== ACTIVITY =====
+  if(scr==="activity"&&aTopic&&aQs.length){const q=aQs[aIdx];const wc=prof?.wrongColour||"red";
+    const pick=opt=>{if(aAns)return;setASl(opt);setAA(true);const ok=opt===q.a;if(ok)setAS(s=>s+1);
+      updProf(sel,p=>{const tp=p.topicProgress[aTopic.k]||{at:0,co:0,wr:0,ls:0};tp.at++;if(ok)tp.co++;else tp.wr++;tp.ls=Date.now();p.topicProgress[aTopic.k]=tp;return p});
+      setTimeout(()=>{if(aIdx<aQs.length-1){setAI(aIdx+1);setAA(false);setASl(null)}else{updProf(sel,p=>{p.quizHistory=[...(p.quizHistory||[]),{topics:[aTopic.k],score:aScore+(ok?1:0),total:aQs.length,ts:Date.now()}];return p});setScr("actR")}},1400)};
+    return <div className="app"><button className="bb" onClick={()=>setScr("tsel-a")}>← Topics</button>
+      <div className="fx jb ac mt8 mb8"><h3>{aTopic.e} {aTopic.l}</h3><span className="tm">{aIdx+1}/{aQs.length}</span></div><PBar c={aIdx} t={aQs.length}/>
+      <div className="card mt16"><div style={{fontSize:isE?"clamp(1.2rem,5vw,1.6rem)":"1rem",fontWeight:700,color:"var(--navy)",lineHeight:1.4}}>{q.q}</div>{q.h&&<p className="hint mt8">💡 {q.h}</p>}</div>
+      <div style={{display:"grid",gap:10}} className="mt12">{q.o.map((opt,i)=>{let c="abtn"+(isE?" abtn-e":"");if(aAns){if(opt===q.a)c+=" ok";else if(opt===aSel)c+=" "+wCls(wc)}
+        return <button key={i} className={c} onClick={()=>pick(opt)} disabled={aAns}>{opt}</button>})}</div>
+      {aAns&&<div className="tc mt12" style={{fontWeight:700,fontSize:"1rem",color:aSel===q.a?"var(--mint)":"var(--navy)",animation:"fadeUp .3s"}}>
+        {aSel===q.a?(prof?.terms?.correct||rC()):(prof?.terms?.wrong||`Answer: ${q.a} — great effort! 💪`)}</div>}{Ntf}</div>}
+
+  if(scr==="actR"){const pct=aQs.length>0?aScore/aQs.length:0;const stars=pct>=.95?3:pct>=.75?2:pct>=.5?1:0;
+    const msgs=["Every expert was once a beginner! 💪","Good effort! 🌱","Excellent! 📖","Word Champion! 🏆"];
+    return <div className="app tc" style={{paddingTop:30}}>{pct>=.8&&<Confetti/>}
+      <div style={{fontSize:"3.2rem"}}>{"⭐".repeat(stars)||"🌱"}</div><h1 className="mt8">{actLbl} Complete!</h1>
+      <p className="mt8" style={{fontSize:"1.2rem",fontWeight:800}}>{aScore}/{aQs.length}</p><p className="mt8 tm" style={{fontWeight:600}}>{msgs[stars]}</p>
+      <p className="mt16 tm" style={{fontSize:".88rem"}}>📖 Read a real book today!</p>
+      <div className="mt24" style={{display:"grid",gap:12}}>
+        <button className="btn bp bw" onClick={()=>setScr("dash")}>Dashboard</button>
+        <button className="btn bs bw" onClick={()=>{setAI(0);setAS(0);setAA(false);setASl(null);setAQs(shuffle(Q[aTopic.k]||[]).slice(0,10));setScr("activity")}}>Try Again 🔄</button></div></div>}
+
+  // ===== READING =====
+  if(scr==="reading"&&prof){const band=gB(prof.gradeId);const books=BOOKS[band]||BOOKS.elementary;const res=RES[band]||RES.elementary;
+    return <div className="app"><button className="bb" onClick={()=>setScr("dash")}>← Dashboard</button><h2 className="mt8">📖 Reading Companion</h2>
+      <div className="banner bi mt12">📚 Read the book first! Then explore.</div>
+      {books.map((b,i)=><div key={i} className="bcard" onClick={()=>{setRB(b);setRI(0);setRA(false);setRSl(null);setRS(0);setScr("readQ")}}>
+        <div className="fx ac g12"><span style={{fontSize:"1.8rem"}}>{b.e}</span><div><div style={{fontWeight:700,color:"var(--navy)"}}>{b.t}</div><div className="tm" style={{fontSize:".82rem"}}>by {b.a}</div></div></div>
+        <div className="mt8 tm" style={{fontSize:".78rem"}}>{b.qs.length} questions</div></div>)}
+      <div className="card mt12"><h3>📚 Resources</h3><div className="mt12">{res.map((r,i)=>r.u?<a key={i} className="rlink" href={r.u} target="_blank" rel="noopener">📎 {r.l}</a>:<div key={i} className="rlink">{r.l}</div>)}</div></div></div>}
+
+  if(scr==="readQ"&&rBook){const q=rBook.qs[rIdx];const wc=prof?.wrongColour||"red";
+    return <div className="app"><button className="bb" onClick={()=>{setRB(null);setScr("reading")}}>← Books</button>
+      <div className="fx ac g12 mt8 mb12"><span style={{fontSize:"1.8rem"}}>{rBook.e}</span><div><h3 style={{margin:0}}>{rBook.t}</h3><span className="tm" style={{fontSize:".8rem"}}>{rIdx+1}/{rBook.qs.length}</span></div></div><PBar c={rIdx} t={rBook.qs.length}/>
+      <div className="card mt16"><div style={{fontSize:"1rem",fontWeight:700,color:"var(--navy)"}}>{q.q}</div></div>
+      <div style={{display:"grid",gap:10}} className="mt12">{q.o.map((opt,i)=>{let c="abtn";if(rAns){if(opt===q.a)c+=" ok";else if(opt===rSel)c+=" "+wCls(wc)}
+        return <button key={i} className={c} onClick={()=>{if(rAns)return;setRSl(opt);setRA(true);if(opt===q.a)setRS(s=>s+1);setTimeout(()=>{if(rIdx<rBook.qs.length-1){setRI(rIdx+1);setRA(false);setRSl(null)}else setScr("readR")},1400)}} disabled={rAns}>{opt}</button>})}</div>
+      {rAns&&<div className="tc mt12" style={{fontWeight:700,color:rSel===q.a?"var(--mint)":"var(--navy)",animation:"fadeUp .3s"}}>{rSel===q.a?rC():`Answer: "${q.a}" — great thinking! 💪`}</div>}</div>}
+
+  if(scr==="readR"&&rBook){const pct=rBook.qs.length>0?rScore/rBook.qs.length:0;
+    return <div className="app tc" style={{paddingTop:30}}>{pct>=.8&&<Confetti/>}
+      <div style={{fontSize:"3rem"}}>{rBook.e}</div><h1 className="mt8">{rBook.t}</h1>
+      <p className="mt8" style={{fontSize:"1.1rem",fontWeight:700}}>{rScore}/{rBook.qs.length}</p>
+      <p className="mt8 tm">{pct>=.8?"Wonderful understanding! ✨":"Keep reading! 🌱"}</p><p className="mt16 tm" style={{fontSize:".88rem"}}>📖 What's next?</p>
+      <button className="btn bp bw mt24" onClick={()=>{setRB(null);setScr("reading")}}>Back to Books</button></div>}
+
+  // ===== PROGRESS =====
+  if(scr==="progress"&&prof){const topics=topicsFor(prof.gradeId);const hist=(prof.quizHistory||[]).slice(-5).reverse();
+    return <div className="app"><button className="bb" onClick={()=>setScr("dash")}>← Dashboard</button>
+      <div className="fx ac g12 mt8 mb16"><span style={{fontSize:"2rem"}}>{prof.avatar}</span><h2>{prof.name}'s Progress</h2></div>
+      <h3 className="mb8">Topics</h3>
+      {topics.map(t=>{const tp=prof.topicProgress?.[t.k];const lvl=masLvl(tp);const pct=tp?.at>0?Math.round(tp.co/tp.at*100):0;
+        return <div key={t.k} className="card" style={{padding:14,marginBottom:10}}>
+          <div className="fx jb ac"><div className="fx ac g8"><span style={{fontSize:"1.3rem"}}>{t.e}</span><span style={{fontWeight:700,fontSize:".9rem"}}>{t.l}</span></div><Badge level={lvl}/></div>
+          {tp?.at>0&&<><PBar c={tp.co} t={tp.at}/><div className="tm mt8" style={{fontSize:".78rem"}}>{tp.co}/{tp.at} ({pct}%)</div></>}
+          {(!tp||!tp.at)&&<div className="tm mt8" style={{fontSize:".78rem"}}>Not started</div>}</div>})}
+      {hist.length>0&&<><h3 className="mt16 mb8">Recent</h3>{hist.map((h,i)=><div key={i} className="card" style={{padding:12,marginBottom:8}}>
+        <div className="fx jb ac"><span style={{fontWeight:600,fontSize:".85rem"}}>{h.score}/{h.total}</span><span className="tm" style={{fontSize:".75rem"}}>{new Date(h.ts).toLocaleDateString()}</span></div></div>)}</>}</div>}
+
+  // ===== PARENT =====
+  if(scr==="parent") return <div className="app"><button className="bb" onClick={()=>setScr("home")}>← Home</button><h2 className="mt8">👨‍👩‍👧 Parent Mode</h2>
+    <div className="tabs mt16">{["overview","personalise","family"].map(t=><button key={t} className={"tab"+(parentTab===t?" on":"")} onClick={()=>setPTab(t)}>{t==="overview"?"Overview":t==="personalise"?"Personalise":"Family"}</button>)}</div>
+    {parentTab==="overview"&&<div>{profiles.length===0&&<p className="tm tc">No learners yet!</p>}
+      {profiles.map(p=>{const topics=topicsFor(p.gradeId);return <div key={p.id} className="card">
+        <div className="fx ac g12 mb12"><span style={{fontSize:"1.8rem"}}>{p.avatar}</span><div><div style={{fontWeight:700}}>{p.name}</div><div className="tm" style={{fontSize:".8rem"}}>{gG(p.gradeId).e} {gL(p.gradeId,country)}</div></div></div>
+        <div className="fx fw g8">{topics.slice(0,6).map(t=><Badge key={t.k} level={masLvl(p.topicProgress?.[t.k])}/>)}</div>
+        <div className="fx g8 mt12"><button className="btn bs" style={{fontSize:".8rem",padding:"8px 14px"}} onClick={()=>{setSel(p.id);setScr("progress")}}>Progress</button>
+        <button className="btn br" style={{fontSize:".8rem",padding:"8px 14px"}} onClick={()=>{if(confirm("Remove "+p.name+"?"))setProfiles(prev=>prev.filter(x=>x.id!==p.id))}}>Remove</button></div></div>})}</div>}
+    {parentTab==="personalise"&&<div>{profiles.map(p=><div key={p.id} className="card">
+      <div className="fx ac g12 mb12"><span style={{fontSize:"1.5rem"}}>{p.avatar}</span><h3>{p.name}</h3></div>
+      <label className="lbl">Activity Name</label><input className="inp" value={p.terms?.activity||"Activity"} onChange={e=>updProf(p.id,pr=>{pr.terms={...pr.terms,activity:e.target.value};return pr})}/>
+      <label className="lbl mt12">Flash Cards Label</label><input className="inp" value={p.terms?.flashcards||"Flash Cards"} onChange={e=>updProf(p.id,pr=>{pr.terms={...pr.terms,flashcards:e.target.value};return pr})}/>
+      <label className="lbl mt12">Correct Message</label><input className="inp" value={p.terms?.correct||""} placeholder="Blank = random" onChange={e=>updProf(p.id,pr=>{pr.terms={...pr.terms,correct:e.target.value};return pr})}/>
+      <label className="lbl mt12">Wrong Message</label><input className="inp" value={p.terms?.wrong||""} placeholder="Blank = default" onChange={e=>updProf(p.id,pr=>{pr.terms={...pr.terms,wrong:e.target.value};return pr})}/>
+      <label className="lbl mt12">Wrong Colour</label><div className="fx g8 mt8">{WCOLS.map(c=><div key={c.id} className={"cdot"+(p.wrongColour===c.id?" sel":"")} style={{background:c.b}} onClick={()=>updProf(p.id,pr=>{pr.wrongColour=c.id;return pr})} title={c.l}/>)}</div>
+    </div>)}</div>}
+    {parentTab==="family"&&<div>
+      <div className="card"><h3>Family Code</h3><p className="mt8" style={{fontSize:"1.2rem",fontWeight:800,color:"var(--blue)",letterSpacing:2}}>{familyCode}</p><p className="tm mt8" style={{fontSize:".82rem"}}>Share to connect devices</p></div>
+      <div className="card"><h3>Change PIN</h3><input className="inp mt8" type="password" inputMode="numeric" maxLength={4} placeholder="New 4-digit PIN" onChange={e=>{const v=e.target.value.replace(/\D/g,"");if(v.length===4){setParentPin(v);notify("PIN updated! ✅")}}}/></div></div>}
+    {Ntf}</div>;
+
+  return <div className="app tc" style={{paddingTop:60}}><h2>Loading...</h2><button className="btn bp mt16" onClick={()=>setScr("home")}>Home</button></div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>
 const SK="wordAdv_v1",SK_C="wordAdv_country",SK_F="wordAdv_family",SK_L="wordAdv_labels",SK_PP="wordAdv_ppin",SK_AP="wordAdv_apin";
 const ls={g:(k,d=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},s:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},r:(k,d="")=>{try{return localStorage.getItem(k)||d}catch{return d}},w:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
 
