@@ -136,6 +136,7 @@ const wCls=c=>({red:"wr",blue:"wb",purple:"wp",yellow:"wy",grey:"wg",teal:"wt"})
 const WCOLS=[{id:"red",l:"Coral",b:"#FF6B6B"},{id:"blue",l:"Blue",b:"#5B9BD5"},{id:"purple",l:"Purple",b:"#9B7FCF"},{id:"yellow",l:"Sunny",b:"#E6B422"},{id:"grey",l:"Grey",b:"#999"},{id:"teal",l:"Teal",b:"#20B2AA"}];
 const CORR=["Wonderful! ✨","You've got it! 🌟","Brilliant! 📚","Keep shining! 💫","Outstanding! 🎉","Way to go! 🌈","Nailed it! ⭐","Fantastic! 🏆"];
 const rC=()=>CORR[Math.floor(Math.random()*CORR.length)];
+const prepQs=(qs,n=10)=>shuffle(qs).slice(0,n).map(q=>({...q,o:shuffle([...q.o])}));
 const Q={
 early_letters:[{q:"What letter makes 'sss'? 🐍",o:["S","B","M","T"],a:"S",h:"Snake!"},{q:"What letter makes 'mmm'? 😋",o:["M","N","P","D"],a:"M",h:"Yummy!"},{q:"What letter makes 'buh'? 🏀",o:["D","B","P","G"],a:"B",h:"Bounce!"},{q:"What letter says 'aaa'? 👨‍⚕️",o:["A","E","O","U"],a:"A",h:"Open wide!"},{q:"What letter makes 'fff'? 🐟",o:["F","V","P","H"],a:"F",h:"Fish!"},{q:"What letter says 'tuh'? 🌮",o:["T","D","K","P"],a:"T",h:"Taco!"},{q:"What letter makes 'duh'? 🐕",o:["B","G","D","T"],a:"D",h:"Dog!"},{q:"What letter says 'kuh'? 🐱",o:["C","K","G","S"],a:"C",h:"Cat!"},{q:"What letter makes 'puh'? 🍕",o:["P","B","D","T"],a:"P",h:"Pizza!"},{q:"What letter says 'rr'? 🦁",o:["R","L","W","N"],a:"R",h:"Roar!"}],
 early_rhyme:[{q:"Rhymes with CAT? 🐱",o:["bat 🦇","dog 🐶"],a:"bat 🦇",h:"Same ending!"},{q:"Rhymes with BIG?",o:["pig 🐷","run 🏃"],a:"pig 🐷",h:"Listen!"},{q:"Rhymes with MOON? 🌙",o:["spoon 🥄","tree 🌳"],a:"spoon 🥄",h:"-oon!"},{q:"Rhymes with BEE? 🐝",o:["tree 🌳","cup ☕"],a:"tree 🌳",h:"ee!"},{q:"Rhymes with HAT? 🎩",o:["mat 🧹","sun ☀️"],a:"mat 🧹",h:"Same ending!"},{q:"Rhymes with KING? 👑",o:["ring 💍","ball ⚽"],a:"ring 💍",h:"-ing!"},{q:"Rhymes with DAD? 👨",o:["sad 😢","cup ☕"],a:"sad 😢",h:"Same ending!"},{q:"Rhymes with STAR? ⭐",o:["car 🚗","dog 🐶"],a:"car 🚗",h:"-ar!"},{q:"Rhymes with FOX? 🦊",o:["box 📦","hat 🎩"],a:"box 📦",h:"-ox!"},{q:"Rhymes with SUN? ☀️",o:["fun 🎉","cat 🐱"],a:"fun 🎉",h:"-un!"}],
@@ -309,7 +310,7 @@ function App(){
       <div class="mt16">${topics.map((t,i)=>{const tp=prof.topicProgress?.[t.k];const lvl=masLvl(tp);
         return html`<div key=${t.k} class="tcard" style=${{animationDelay:i*.04+"s"}} onClick=${()=>{const qs=Q[t.k];if(!qs?.length){notify("Coming soon!");return}
           if(mode==="flash"){setFT(t);setFC(shuffle(qs));setFI(0);setFR(false);setFG(0);setFTot(0);setScr("flash")}
-          else{setAT(t);setAQs(shuffle(qs).slice(0,10));setAI(0);setAS(0);setAA(false);setASl(null);setScr("activity")}}}>
+          else{setAT(t);setAQs(prepQs(qs));setAI(0);setAS(0);setAA(false);setASl(null);setScr("activity")}}}>
           <div style=${{fontSize:"1.6rem",flexShrink:0}}>${t.e}</div><div style=${{flex:1}}><div style=${{fontWeight:700,fontSize:".92rem",color:"var(--navy)"}}>${t.l}</div>
           <div class="tm" style=${{fontSize:".76rem"}}>${tp?`${tp.co||0}/${tp.at||0} correct`:"Not started"}</div></div><${Badge} level=${lvl}/></div>`})}</div>${Ntf}</div>`}
 
@@ -349,12 +350,12 @@ function App(){
       <p class="mt16 tm" style=${{fontSize:".88rem"}}>\uD83D\uDCD6 Read a real book today!</p>
       <div class="mt24" style=${{display:"grid",gap:12}}>
         <button class="btn bp bw" onClick=${()=>setScr("dash")}>Dashboard</button>
-        <button class="btn bs bw" onClick=${()=>{setAI(0);setAS(0);setAA(false);setASl(null);setAQs(shuffle(Q[aTopic.k]||[]).slice(0,10));setScr("activity")}}>Try Again \uD83D\uDD04</button></div></div>`}
+        <button class="btn bs bw" onClick=${()=>{setAI(0);setAS(0);setAA(false);setASl(null);setAQs(prepQs(Q[aTopic.k]||[]));setScr("activity")}}>Try Again \uD83D\uDD04</button></div></div>`}
 
   if(scr==="reading"&&prof){const band=gB(prof.gradeId);const books=BOOKS[band]||BOOKS.elementary;const res=RES[band]||RES.elementary;
     return html`<div class="app"><button class="bb" onClick=${()=>setScr("dash")}>\u2190 Dashboard</button><h2 class="mt8">\uD83D\uDCD6 Reading Companion</h2>
       <div class="banner bi mt12">\uD83D\uDCDA Read the book first! Then explore.</div>
-      ${books.map((b,i)=>html`<div key=${i} class="bcard" onClick=${()=>{setRB(b);setRI(0);setRA(false);setRSl(null);setRS(0);setScr("readQ")}}>
+      ${books.map((b,i)=>html`<div key=${i} class="bcard" onClick=${()=>{setRB({...b,qs:b.qs.map(q=>({...q,o:shuffle([...q.o])}))});setRI(0);setRA(false);setRSl(null);setRS(0);setScr("readQ")}}>
         <div class="fx ac g12"><span style=${{fontSize:"1.8rem"}}>${b.e}</span><div><div style=${{fontWeight:700,color:"var(--navy)"}}>${b.t}</div><div class="tm" style=${{fontSize:".82rem"}}>by ${b.a}</div></div></div>
         <div class="mt8 tm" style=${{fontSize:".78rem"}}>${b.qs.length} questions</div></div>`)}
       <div class="card mt12"><h3>\uD83D\uDCDA Resources</h3><div class="mt12">${res.map((r,i)=>r.u?html`<a key=${i} class="rlink" href=${r.u} target="_blank" rel="noopener">\uD83D\uDCCE ${r.l}</a>`:html`<div key=${i} class="rlink">${r.l}</div>`)}</div></div></div>`}
